@@ -1,0 +1,53 @@
+# News Bias Word Detection Configuration
+# Aligned with experimental setup in Spinde et al. (2021)
+
+project:
+  name: "news-bias-word-detection"
+  version: "0.2.0"
+  random_seed: 42
+
+paths:
+  raw_sentences: "data/raw/labeled_dataset.parquet"
+  annotators: "data/raw/annotators.csv"
+  seed_biased_words: "data/raw/seed_biased_words.xlsx"
+  bias_lexicon_file: "data/raw/bised_words_lexicon.xlsx"
+  token_features_dataset: "data/processed/dt_final.parquet"
+  outputs_dir: "outputs"
+  eda_dir: "outputs/eda"
+  eval_dir: "outputs/evaluation"
+
+dataset:
+  target_label: "label4"  # Word marked as biased if >= 4 crowd annotators agreed
+  test_size: 0.10
+  val_size: 0.10
+  imbalance_ratio: 0.095  # ~9.5% positive class (biased words)
+
+baselines:
+  paper_baselines:
+    b1_random:
+      enabled: true
+      name: "B1: Random Classifier"
+    b2_negative_sentiment:
+      enabled: true
+      name: "B2: Negative Sentiment Lexicon"
+      feature_col: "negative_conc"
+    b3_sentiment_polarity:
+      enabled: true
+      name: "B3: Positive + Negative Sentiment Lexicon"
+      pos_col: "positive_conc"
+      neg_col: "negative_conc"
+    b4_bias_lexicon:
+      enabled: true
+      name: "B4: Semi-Automated Bias Lexicon"
+      feature_col: "bias_lexicon"
+  ml_baselines:
+    logistic_regression:
+      enabled: true
+      class_weight: {0: 10, 1: 90}
+      max_iter: 1000
+    complement_nb:
+      enabled: true
+    random_forest:
+      enabled: true
+      n_estimators: 100
+      class_weight: {0: 10, 1: 90}
