@@ -1,10 +1,10 @@
-# 🔬 Model Comparison Report: Top 10 Models from Research Paper
+# Model Comparison Report: Top 10 Models from Research Paper
 
 > **Benchmark Reference**: *Automated identification of bias inducing words in news articles using linguistic and context-oriented features* (Spinde et al., Elsevier 2021)
 
 Evaluated on identical held-out test split of **3,114 words** (302 biased words, 2,812 non-biased words) with fixed `random_state=42`.
 
-## 📊 Comprehensive Performance & Confusion Matrix Table
+## Comprehensive Performance & Confusion Matrix Table
 
 | Rank | Model                              | Accuracy | Correct Words | Failed Words | TP  | TN   | FP  | FN  | F1     | Precision | Recall | ROC AUC |
 | -----|------------------------------------|----------|---------------|--------------|-----|------|-----|-----|--------|-----------|--------|-------- |
@@ -21,7 +21,7 @@ Evaluated on identical held-out test split of **3,114 words** (302 biased words,
 
 ---
 
-## 🔍 Deep-Dive: Word Counts & Error Breakdown
+## Deep-Dive: Word Counts & Error Breakdown
 
 | Model | Correct Words Count | Failed Words Count | Sample Correctly Predicted Biased Words | Sample False Alarms (FP Words) | Sample Missed Bias (FN Words) |
 | :--- | :---: | :---: | :--- | :--- | :--- |
@@ -39,7 +39,7 @@ Evaluated on identical held-out test split of **3,114 words** (302 biased words,
 
 ---
 
-## 💡 Key Empirical Observations
+## Key Empirical Observations
 
 1. **The Accuracy Paradox in Imbalanced Word Data**:
    - Models like *Random Forest* (91.43%) and *Multilayer Perceptron* (91.36%) achieve high accuracy by playing conservative—they predict very few positive words, resulting in low recall (0.24 - 0.38).

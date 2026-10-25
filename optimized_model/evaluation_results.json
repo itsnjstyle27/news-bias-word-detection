@@ -51,7 +51,7 @@
     "white",
     "little"
   ],
-  "fit_time_sec": 8.28,
+  "fit_time_sec": 5.81,
   "benchmark_comparison": [
     {
       "model": "Optimized Model (Ours)",
@@ -67,7 +67,7 @@
       "tn": 2786,
       "fp": 26,
       "fn": 230,
-      "status": "CHAMPION (#1 Accuracy)"
+      "status": "[#1 CHAMPION] Highest Accuracy"
     },
     {
       "model": "Random Forest (Weighted)",
@@ -115,7 +115,7 @@
       "tn": 2713,
       "fp": 99,
       "fn": 189,
-      "status": "Paper Linear SOTA"
+      "status": "Paper Linear Baseline"
     },
     {
       "model": "B4: Semi-Automated Bias Lexicon",

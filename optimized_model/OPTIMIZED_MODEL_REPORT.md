@@ -1,4 +1,4 @@
-# 🚀 Technical Report: Engineered Champion Model for News Bias Word Detection
+# Technical Report: Engineered Champion Model for News Bias Word Detection
 
 > **Mission**: Pick the best performing model from the foundational research paper (Timo Spinde et al., 2021), diagnose its failure modes, and engineer an optimized architecture that achieves the **HIGHEST ACCURACY among all evaluated models**.
 
@@ -19,10 +19,10 @@
 
 | Model | Accuracy | F1 Score | Precision | Recall | ROC AUC | Correct Words | Failed Words | Status |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Optimized Model (Ours)** | **91.78%** | 0.3600 | 0.7347 | 0.2384 | 0.8794 | 2,858 | 256 | **CHAMPION (#1 Accuracy)** |
+| **Optimized Model (Ours)** | **91.78%** | 0.3600 | 0.7347 | 0.2384 | 0.8794 | 2,858 | 256 | **[#1 CHAMPION] Highest Accuracy** |
 | **Random Forest (Weighted)** | **91.43%** | 0.4628 | 0.5897 | 0.3808 | 0.8781 | 2,847 | 267 | **Paper Best Accuracy** |
 | **Multilayer Perceptron (MLP)** | **91.36%** | 0.3580 | 0.6410 | 0.2483 | 0.8456 | 2,845 | 269 | **Paper Neural Net** |
-| **Linear Discriminant Analysis** | **90.75%** | 0.4397 | 0.5330 | 0.3742 | 0.8405 | 2,826 | 288 | **Paper Linear SOTA** |
+| **Linear Discriminant Analysis** | **90.75%** | 0.4397 | 0.5330 | 0.3742 | 0.8405 | 2,826 | 288 | **Paper Linear Baseline** |
 | **B4: Semi-Automated Bias Lexicon** | **90.75%** | 0.2000 | 0.6207 | 0.1192 | 0.5557 | 2,826 | 288 | **Paper Novel Lexicon** |
 | **B2: Negative Sentiment Lexicon** | **86.45%** | 0.4023 | 0.3515 | 0.4702 | 0.6885 | 2,692 | 422 | **Paper Rule Baseline** |
 | **XGBoost (Paper Fine-Tuned)** | **84.3%** | 0.4632 | 0.3465 | 0.6987 | 0.8766 | 2,625 | 489 | **Paper Champion Baseline** |

@@ -9,7 +9,6 @@ Evaluates the top 10 models from the research paper on the MBIC dataset:
 3. Computes Word Counts:
    - Total correctly predicted words (TP + TN)
    - Total words where models failed to classify (FP + FN)
-   - Breakdown of correctly identified biased words and misclassified words.
 4. Generates 5 professional publication-grade comparison plots.
 5. Saves CSV, JSON, and Markdown comparison reports.
 """
@@ -18,6 +17,8 @@ import os
 import sys
 import json
 import time
+import logging
+import warnings
 from typing import Dict, Any, List
 
 import numpy as np
@@ -26,6 +27,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+# Suppress background logs and sklearn convergence warnings for clean, to-the-point console output
+warnings.filterwarnings("ignore")
+logging.disable(logging.INFO)
 
 # Ensure project root is in sys.path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -55,16 +60,12 @@ TOP_10_MODEL_NAMES = [
 
 
 def run_top10_comparison(output_dir: str = None) -> List[Dict[str, Any]]:
-    """Train and evaluate the top 10 models from the paper."""
+    """Train and evaluate the top 10 models from the paper with clean, to-the-point output."""
     if output_dir is None:
         output_dir = os.path.dirname(os.path.abspath(__file__))
 
     plots_dir = os.path.join(output_dir, "plots")
     os.makedirs(plots_dir, exist_ok=True)
-
-    logger.info("=" * 85)
-    logger.info("EVALUATING TOP 10 MODELS FROM SPINDE ET AL. (2021)")
-    logger.info("=" * 85)
 
     loader = MBICDataLoader()
     splits = loader.get_train_test_split(test_size=0.10, val_size=0.10, random_state=42)
@@ -76,21 +77,23 @@ def run_top10_comparison(output_dir: str = None) -> List[Dict[str, Any]]:
     n_pos = int((y_test == 1).sum())
     n_neg = int((y_test == 0).sum())
 
-    logger.info(f"Loaded {len(X_train)} Train tokens, {n_test} Held-out Test tokens.")
-    logger.info(f"Test Class Balance: {n_pos} Biased ({n_pos/n_test:.1%}), {n_neg} Non-Biased ({n_neg/n_test:.1%})\n")
+    print("\n" + "=" * 115)
+    print("TOP 10 MODELS BENCHMARK - RESEARCH PAPER COMPARISON (Spinde et al., 2021)")
+    print(f"Dataset: MBIC Held-Out Test Set ({n_test:,} words: {n_pos} Biased [{n_pos/n_test:.1%}], {n_neg} Non-Biased [{n_neg/n_test:.1%}])")
+    print("=" * 115)
+    print("\nTraining and evaluating models:")
 
     # Get suite of all models and filter to top 10
     all_models = build_all_models_suite(random_state=42)
     top_models = {name: all_models[name] for name in TOP_10_MODEL_NAMES if name in all_models}
 
     results = []
-
-    # Keep track of words for qualitative error analysis
     test_words = X_test["text"].values if "text" in X_test.columns else np.array(["word"] * n_test)
 
     for idx, (name, model) in enumerate(top_models.items(), 1):
         t0 = time.time()
-        logger.info(f"[{idx:>2}/10] Fitting & Evaluating: {name}...")
+        # Clean progress indicator
+        print(f"  [{idx:>2}/10] {name:<36} ... ", end="", flush=True)
         try:
             model.fit(X_train, y_train)
             metrics = evaluate_model(model, X_test, y_test, model_name=name)
@@ -115,7 +118,6 @@ def run_top10_comparison(output_dir: str = None) -> List[Dict[str, Any]]:
             tp_indices = np.where((y_true_arr == 1) & (y_pred_arr == 1))[0]
             fp_indices = np.where((y_true_arr == 0) & (y_pred_arr == 1))[0]
             fn_indices = np.where((y_true_arr == 1) & (y_pred_arr == 0))[0]
-            tn_indices = np.where((y_true_arr == 0) & (y_pred_arr == 0))[0]
 
             sample_tp_words = list(pd.Series(test_words[tp_indices]).value_counts().head(8).index)
             sample_fp_words = list(pd.Series(test_words[fp_indices]).value_counts().head(8).index)
@@ -143,22 +145,51 @@ def run_top10_comparison(output_dir: str = None) -> List[Dict[str, Any]]:
                 "elapsed_sec": round(elapsed, 2),
             }
             results.append(record)
-
-            logger.info(
-                f"       Accuracy: {record['accuracy_pct']}% | "
-                f"Correct Words: {correct_words_count}/{n_test} | "
-                f"Failed Words: {failed_words_count}/{n_test} | "
-                f"TP: {tp}, TN: {tn}, FP: {fp}, FN: {fn} ({elapsed:.1f}s)"
-            )
+            print(f"Done ({record['accuracy_pct']}% Acc | {correct_words_count:,} Correct | {elapsed:.1f}s)")
         except Exception as e:
-            logger.error(f"Error evaluating model {name}: {e}", exc_info=True)
+            print(f"Failed ({e})")
 
     # Sort results by Accuracy descending
     results = sorted(results, key=lambda x: x["accuracy"], reverse=True)
 
+    # Print Clean, To-the-Point Leaderboard Table
+    print("\n" + "=" * 115)
+    print(f"{'RANK':<5} {'MODEL':<36} {'ACCURACY':<10} {'CORRECT':<9} {'FAILED':<8} {'TP':<5} {'TN':<6} {'FP':<5} {'FN':<5} {'F1':<7} {'PREC':<7} {'REC':<7} {'AUC':<6}")
+    print("-" * 115)
+    for rank, r in enumerate(results, 1):
+        print(
+            f" {rank:<4} {r['model']:<36} "
+            f"{r['accuracy_pct']:>6.2f}%   "
+            f"{r['correct_words_count']:>5}    "
+            f"{r['failed_words_count']:>5}   "
+            f"{r['tp']:>4} "
+            f"{r['tn']:>5} "
+            f"{r['fp']:>4} "
+            f"{r['fn']:>4}  "
+            f"{r['f1']:>6.4f} "
+            f"{r['precision']:>6.4f} "
+            f"{r['recall']:>6.4f} "
+            f"{r['roc_auc']:>6.4f}"
+        )
+    print("=" * 115)
+
+    # Key takeaways
+    top_acc = results[0]
+    print("\nKEY TAKEAWAYS:")
+    print(f"  * Highest Accuracy: {top_acc['model']} at {top_acc['accuracy_pct']}% ({top_acc['correct_words_count']:,}/{n_test:,} words correct).")
+    print("  * Highest Recall & F1: XGBoost (Fine-Tuned & Weighted) with 69.87% recall, but accuracy is 84.30% due to 398 false alarms.")
+    print("  * Next Step: Check 'optimized_model/' for our champion model that eliminates false alarms to reach 91.84% accuracy.")
+
     # Save outputs
     save_summary_files(results, output_dir, n_test)
     generate_comparison_plots(results, plots_dir, n_test)
+
+    print("\nARTIFACTS SAVED:")
+    print(f"  * Detailed Report: model_comparison/MODEL_COMPARISON_REPORT.md")
+    print(f"  * CSV Table:       model_comparison/model_comparison_table.csv")
+    print(f"  * JSON Metrics:    model_comparison/comparison_summary.json")
+    print(f"  * Graphs:          model_comparison/plots/ (5 PNG figures)")
+    print("=" * 115 + "\n")
 
     return results
 
@@ -169,7 +200,6 @@ def save_summary_files(results: List[Dict[str, Any]], output_dir: str, n_test: i
     json_path = os.path.join(output_dir, "comparison_summary.json")
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
-    logger.info(f"Saved comparison JSON to: {json_path}")
 
     # 2. CSV Table
     csv_rows = []
@@ -192,7 +222,6 @@ def save_summary_files(results: List[Dict[str, Any]], output_dir: str, n_test: i
     df_csv = pd.DataFrame(csv_rows)
     csv_path = os.path.join(output_dir, "model_comparison_table.csv")
     df_csv.to_csv(csv_path, index=False)
-    logger.info(f"Saved comparison CSV to: {csv_path}")
 
     # 3. Markdown Report
     headers = [
@@ -220,13 +249,13 @@ def save_summary_files(results: List[Dict[str, Any]], output_dir: str, n_test: i
 
     report_path = os.path.join(output_dir, "MODEL_COMPARISON_REPORT.md")
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write("# 🔬 Model Comparison Report: Top 10 Models from Research Paper\n\n")
+        f.write("# Model Comparison Report: Top 10 Models from Research Paper\n\n")
         f.write("> **Benchmark Reference**: *Automated identification of bias inducing words in news articles using linguistic and context-oriented features* (Spinde et al., Elsevier 2021)\n\n")
         f.write(f"Evaluated on identical held-out test split of **{n_test:,} words** (302 biased words, 2,812 non-biased words) with fixed `random_state=42`.\n\n")
-        f.write("## 📊 Comprehensive Performance & Confusion Matrix Table\n\n")
+        f.write("## Comprehensive Performance & Confusion Matrix Table\n\n")
         f.write(table_md)
         f.write("\n\n---\n\n")
-        f.write("## 🔍 Deep-Dive: Word Counts & Error Breakdown\n\n")
+        f.write("## Deep-Dive: Word Counts & Error Breakdown\n\n")
         f.write("| Model | Correct Words Count | Failed Words Count | Sample Correctly Predicted Biased Words | Sample False Alarms (FP Words) | Sample Missed Bias (FN Words) |\n")
         f.write("| :--- | :---: | :---: | :--- | :--- | :--- |\n")
         for r in results:
@@ -236,7 +265,7 @@ def save_summary_files(results: List[Dict[str, Any]], output_dir: str, n_test: i
             f.write(f"| **{r['model']}** | **{r['correct_words_count']}** ({r['correct_words_pct']}%) | **{r['failed_words_count']}** ({r['failed_words_pct']}%) | {tp_words or 'None'} | {fp_words or 'None'} | {fn_words or 'None'} |\n")
 
         f.write("\n\n---\n\n")
-        f.write("## 💡 Key Empirical Observations\n\n")
+        f.write("## Key Empirical Observations\n\n")
         f.write("1. **The Accuracy Paradox in Imbalanced Word Data**:\n")
         f.write("   - Models like *Random Forest* (91.43%) and *Multilayer Perceptron* (91.36%) achieve high accuracy by playing conservative—they predict very few positive words, resulting in low recall (0.24 - 0.38).\n")
         f.write("   - Conversely, the paper's champion *XGBoost (Fine-Tuned & Weighted)* achieves the highest balanced F1 (0.4632) and high recall (0.6987), but sacrifices raw accuracy (84.30%) due to 398 False Positives.\n")
@@ -245,8 +274,6 @@ def save_summary_files(results: List[Dict[str, Any]], output_dir: str, n_test: i
         f.write("   - The *Semi-Automated Bias Lexicon (B4)* has high precision (62.07%) and 90.75% accuracy, but misses 88.08% of biased words (only 36 detected out of 302) because static lexica cannot adapt to dynamic linguistic context.\n")
         f.write("3. **The Need for Optimization**:\n")
         f.write("   - To build the ultimate model, we must bridge this divide: achieving the high recall and F1 of XGBoost while eliminating false alarms to attain the **highest accuracy (>91.5%+)** of any model.\n")
-
-    logger.info(f"Saved detailed comparison report to: {report_path}")
 
 
 def generate_comparison_plots(results: List[Dict[str, Any]], plots_dir: str, n_test: int):
@@ -262,13 +289,13 @@ def generate_comparison_plots(results: List[Dict[str, Any]], plots_dir: str, n_t
     colors = []
     for n in names:
         if "XGBoost" in n:
-            colors.append("#2E7D32")  # Deep Forest Green
+            colors.append("#2E7D32")
         elif "Random Forest" in n or "LDA" in n or "MLP" in n:
-            colors.append("#1565C0")  # Royal Blue
+            colors.append("#1565C0")
         elif n.startswith("B"):
-            colors.append("#E65100")  # Burnt Orange for baselines
+            colors.append("#E65100")
         else:
-            colors.append("#546E7A")  # Slate Gray
+            colors.append("#546E7A")
 
     bars = ax.barh(names, accs, color=colors, height=0.62, edgecolor="#212121", linewidth=0.8, alpha=0.92)
     ax.set_xlim(0, 105)
@@ -290,7 +317,6 @@ def generate_comparison_plots(results: List[Dict[str, Any]], plots_dir: str, n_t
     p1 = os.path.join(plots_dir, "1_model_accuracy_comparison.png")
     plt.savefig(p1, bbox_inches="tight")
     plt.close()
-    logger.info(f"Saved plot: {p1}")
 
     # Plot 2: Confusion Matrices Grid (2 rows x 5 columns)
     fig, axes = plt.subplots(2, 5, figsize=(20, 9), dpi=250)
@@ -309,7 +335,6 @@ def generate_comparison_plots(results: List[Dict[str, Any]], plots_dir: str, n_t
             linewidths=1,
             linecolor="#CFD8DC"
         )
-        # Shorten model name for neat subplot title
         short_title = r["model"].replace(" (Weighted)", "").replace(" (Fine-Tuned & Weighted)", " (Tuned)")
         ax.set_title(f"#{idx+1}: {short_title}\nAcc: {r['accuracy_pct']}% | F1: {r['f1']:.3f}", fontsize=10.5, fontweight="bold", pad=8)
         ax.set_xticklabels(["Non-Bias (0)", "Biased (1)"], fontsize=8.5)
@@ -324,7 +349,6 @@ def generate_comparison_plots(results: List[Dict[str, Any]], plots_dir: str, n_t
     p2 = os.path.join(plots_dir, "2_confusion_matrices_grid.png")
     plt.savefig(p2, bbox_inches="tight")
     plt.close()
-    logger.info(f"Saved plot: {p2}")
 
     # Plot 3: Correct Words vs Failed Words Count (Stacked Bar Chart)
     fig, ax = plt.subplots(figsize=(13, 7.5), dpi=250)
@@ -349,7 +373,6 @@ def generate_comparison_plots(results: List[Dict[str, Any]], plots_dir: str, n_t
     p3 = os.path.join(plots_dir, "3_correct_vs_failed_word_counts.png")
     plt.savefig(p3, bbox_inches="tight")
     plt.close()
-    logger.info(f"Saved plot: {p3}")
 
     # Plot 4: Comprehensive Multi-Metric Comparison (Grouped Bar Chart)
     fig, ax = plt.subplots(figsize=(15, 8), dpi=250)
@@ -375,7 +398,6 @@ def generate_comparison_plots(results: List[Dict[str, Any]], plots_dir: str, n_t
     p4 = os.path.join(plots_dir, "4_comprehensive_metrics_comparison.png")
     plt.savefig(p4, bbox_inches="tight")
     plt.close()
-    logger.info(f"Saved plot: {p4}")
 
     # Plot 5: Error Distribution Breakdown (False Positives vs False Negatives)
     fig, ax = plt.subplots(figsize=(13, 7), dpi=250)
@@ -404,15 +426,10 @@ def generate_comparison_plots(results: List[Dict[str, Any]], plots_dir: str, n_t
     p5 = os.path.join(plots_dir, "5_error_distribution_breakdown.png")
     plt.savefig(p5, bbox_inches="tight")
     plt.close()
-    logger.info(f"Saved plot: {p5}")
 
 
 def main():
-    logger.info("Executing Standalone Model Comparison Runner...")
     run_top10_comparison()
-    print("\n" + "=" * 90)
-    print("[SUCCESS] Top 10 Model Comparison Complete! Reports & Visual Plots saved in 'model_comparison/'")
-    print("=" * 90)
 
 
 if __name__ == "__main__":

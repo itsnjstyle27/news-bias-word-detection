@@ -45,7 +45,7 @@
       "willing",
       "nationalist"
     ],
-    "elapsed_sec": 2.87
+    "elapsed_sec": 3.26
   },
   {
     "model": "Multilayer Perceptron (MLP)",
@@ -93,7 +93,7 @@
       "pomp",
       "burden"
     ],
-    "elapsed_sec": 12.01
+    "elapsed_sec": 12.66
   },
   {
     "model": "Linear Discriminant Analysis (LDA)",
@@ -141,7 +141,7 @@
       "willing",
       "nationalist"
     ],
-    "elapsed_sec": 5.97
+    "elapsed_sec": 4.95
   },
   {
     "model": "B4: Semi-Automated Bias Lexicon",
@@ -189,7 +189,7 @@
       "pomp",
       "burden"
     ],
-    "elapsed_sec": 0.03
+    "elapsed_sec": 0.04
   },
   {
     "model": "SVM (RBF Kernel, Weighted)",
@@ -237,7 +237,7 @@
       "conspiracy",
       "willing"
     ],
-    "elapsed_sec": 13.01
+    "elapsed_sec": 12.33
   },
   {
     "model": "B2: Negative Sentiment Lexicon",
@@ -333,7 +333,7 @@
       "prosecutors",
       "concocting"
     ],
-    "elapsed_sec": 3.0
+    "elapsed_sec": 2.99
   },
   {
     "model": "Linear SVM (Weighted)",
@@ -381,7 +381,7 @@
       "away",
       "trots"
     ],
-    "elapsed_sec": 11.92
+    "elapsed_sec": 12.05
   },
   {
     "model": "Logistic Regression (Weighted)",
@@ -429,7 +429,7 @@
       "away",
       "trots"
     ],
-    "elapsed_sec": 2.41
+    "elapsed_sec": 2.48
   },
   {
     "model": "Complement Naive Bayes",
@@ -477,6 +477,6 @@
       "prosecutors",
       "flood"
     ],
-    "elapsed_sec": 1.79
+    "elapsed_sec": 1.99
   }
 ]
